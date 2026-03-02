@@ -1,15 +1,15 @@
 import os
 import logging
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
-    CallbackQueryHandler, filters, ContextTypes, ConversationHandler
+    CallbackQueryHandler, filters, ContextTypes
 )
 
-# ===================== SOZLAMALAR =====================
-BOT_TOKEN = "8198803618:AAFzAitPKDK5ccRge0t_kHCw0neUyV2UNLM"
-ADMIN_ID = 7355709066 # Bu yerga o'z Telegram ID ingizni qo'ying
-# ======================================================
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -17,18 +17,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-WAITING_REPLY = {}  # admin reply kutayotgan user_id larini saqlaydi
+WAITING_REPLY = {}
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
     text = (
         "👋 Assalomu alaykum!\n\n"
         "Men <b>Dilshod Toxirov</b>ning feedback botiman.\n\n"
         "Bu bot orqali siz:\n"
         "💬 Taklif yoki shikoyat yuborishingiz\n"
         "📢 Reklama bo'yicha murojaat qilishingiz\n"
-        "❓ Istalgan savol yoki xabar yoʻllashingiz mumkin\n\n"
+        "❓ Istalgan savol yoki xabar yo'llashingiz mumkin\n\n"
         "Shunchaki xabaringizni yozing — men albatta ko'raman! ✍️"
     )
     await update.message.reply_text(text, parse_mode="HTML")
@@ -38,21 +37,15 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = update.effective_user
     message = update.message
 
-    # Admin bo'lsa va reply kutilayotgan bo'lsa
-    if user.id == ADMIN_ID and user.id in WAITING_REPLY:
-        return  # Bu holatni boshqa handler oladi
-
     if user.id == ADMIN_ID:
-        await message.reply_text("⚙️ Siz adminsiz. Foydalanuvchiga javob berish uchun forward qilingan xabardagi 'Javob berish' tugmasini bosing.")
+        await message.reply_text("⚙️ Siz adminsiz. Javob berish uchun 'Javob berish' tugmasini bosing.")
         return
 
-    # Foydalanuvchi ma'lumotlarini tayyorlash
     full_name = user.full_name
     user_id = user.id
     username = f"@{user.username}" if user.username else "username yo'q"
     tg_link = f"https://t.me/{user.username}" if user.username else f"tg://user?id={user_id}"
 
-    # Admin uchun xabar matni
     admin_text = (
         f"📩 <b>Yangi xabar!</b>\n\n"
         f"👤 <b>Ism:</b> {full_name}\n"
@@ -62,7 +55,6 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"💬 <b>Xabar:</b>\n{message.text or '[Media xabar]'}"
     )
 
-    # "Javob berish" tugmasi
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✍️ Javob berish", callback_data=f"reply_{user_id}")]
     ])
@@ -74,20 +66,16 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             parse_mode="HTML",
             reply_markup=keyboard
         )
-        # Media bo'lsa ham yuborish
         if message.photo:
-            await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=f"📸 Yuqoridagi foydalanuvchidan rasm")
+            await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption="📸 Yuqoridagi foydalanuvchidan rasm")
         elif message.video:
-            await context.bot.send_video(ADMIN_ID, message.video.file_id, caption=f"🎥 Yuqoridagi foydalanuvchidan video")
+            await context.bot.send_video(ADMIN_ID, message.video.file_id, caption="🎥 Yuqoridagi foydalanuvchidan video")
         elif message.document:
-            await context.bot.send_document(ADMIN_ID, message.document.file_id, caption=f"📎 Yuqoridagi foydalanuvchidan fayl")
+            await context.bot.send_document(ADMIN_ID, message.document.file_id, caption="📎 Yuqoridagi foydalanuvchidan fayl")
         elif message.voice:
-            await context.bot.send_voice(ADMIN_ID, message.voice.file_id, caption=f"🎤 Yuqoridagi foydalanuvchidan ovozli xabar")
+            await context.bot.send_voice(ADMIN_ID, message.voice.file_id, caption="🎤 Yuqoridagi foydalanuvchidan ovozli xabar")
 
-        await message.reply_text(
-            "✅ Xabaringiz yuborildi! Tez orada javob olasiz.",
-            parse_mode="HTML"
-        )
+        await message.reply_text("✅ Xabaringiz yuborildi! Tez orada javob olasiz.")
     except Exception as e:
         logger.error(f"Xabar yuborishda xato: {e}")
         await message.reply_text("❌ Xabar yuborishda xato yuz berdi. Keyinroq urinib ko'ring.")
@@ -105,7 +93,7 @@ async def handle_reply_button(update: Update, context: ContextTypes.DEFAULT_TYPE
     WAITING_REPLY[ADMIN_ID] = target_user_id
 
     await query.message.reply_text(
-        f"✍️ Javobingizni yozing (ID: <code>{target_user_id}</code> ga yuboriladi):\n\n"
+        f"✍️ Javobingizni yozing (<code>{target_user_id}</code> ga yuboriladi):\n\n"
         f"Bekor qilish uchun /cancel yozing.",
         parse_mode="HTML"
     )
@@ -119,25 +107,21 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return await handle_user_message(update, context)
 
     if ADMIN_ID not in WAITING_REPLY:
-        await message.reply_text("⚙️ Siz adminsiz. Foydalanuvchiga javob berish uchun 'Javob berish' tugmasini bosing.")
+        await message.reply_text("⚙️ Siz adminsiz. Javob berish uchun 'Javob berish' tugmasini bosing.")
         return
 
     target_id = WAITING_REPLY.pop(ADMIN_ID)
 
     try:
-        reply_text = (
-            f"📬 <b>Dilshod Toxirovdan javob:</b>\n\n"
-            f"{message.text}"
-        )
         await context.bot.send_message(
             chat_id=target_id,
-            text=reply_text,
+            text=f"📬 <b>Dilshod Toxirovdan javob:</b>\n\n{message.text}",
             parse_mode="HTML"
         )
         await message.reply_text(f"✅ Javob foydalanuvchiga ({target_id}) yuborildi!")
     except Exception as e:
         logger.error(f"Javob yuborishda xato: {e}")
-        await message.reply_text(f"❌ Xato: Foydalanuvchiga xabar yuborib bo'lmadi. Ular botni bloklagandir.")
+        await message.reply_text("❌ Foydalanuvchiga xabar yuborib bo'lmadi. Ular botni bloklagandir.")
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -151,19 +135,17 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("cancel", cancel))
     app.add_handler(CallbackQueryHandler(handle_reply_button, pattern=r"^reply_\d+$"))
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND,
-        handle_admin_reply  # Bu ikkalasini ham handle qiladi (admin va user)
+        handle_admin_reply
     ))
     app.add_handler(MessageHandler(
         filters.PHOTO | filters.VIDEO | filters.Document.ALL | filters.VOICE,
         handle_user_message
     ))
-
     logger.info("Bot ishga tushdi...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
