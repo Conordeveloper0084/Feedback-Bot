@@ -51,7 +51,7 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"👤 <b>Ism:</b> {full_name}\n"
         f"🆔 <b>Telegram ID:</b> <code>{user_id}</code>\n"
         f"🔗 <b>Username:</b> {username}\n\n"
-        f"💬 <b>Xabar:</b>\n{message.text or '[Media xabar]'}"
+        f"💬 <b>Xabar:</b>\n{message.text or message.caption or '[Media xabar]'}"
     )
 
     keyboard = InlineKeyboardMarkup([
@@ -66,7 +66,7 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=keyboard
         )
         if message.photo:
-            await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption="📸 Yuqoridagi foydalanuvchidan rasm")
+            await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id)
         elif message.video:
             await context.bot.send_video(ADMIN_ID, message.video.file_id, caption="🎥 Yuqoridagi foydalanuvchidan video")
         elif message.document:
