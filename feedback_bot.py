@@ -44,14 +44,12 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     full_name = user.full_name
     user_id = user.id
     username = f"@{user.username}" if user.username else "username yo'q"
-    tg_link = f"https://t.me/{user.username}" if user.username else f"tg://user?id={user_id}"
 
     admin_text = (
         f"📩 <b>Yangi xabar!</b>\n\n"
         f"👤 <b>Ism:</b> {full_name}\n"
         f"🆔 <b>Telegram ID:</b> <code>{user_id}</code>\n"
-        f"🔗 <b>Username:</b> {username}\n\n"
-        f"💬 <b>Xabar:</b>\n{message.text or message.caption or '[Media xabar]'}"
+        f"🔗 <b>Username:</b> {username}"
     )
 
     keyboard = InlineKeyboardMarkup([
@@ -59,20 +57,15 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     ])
 
     try:
+        # User ma'lumotlari + "Javob berish" tugmasi
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=admin_text,
             parse_mode="HTML",
             reply_markup=keyboard
         )
-        if message.photo:
-            await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id)
-        elif message.video:
-            await context.bot.send_video(ADMIN_ID, message.video.file_id, caption="🎥 Yuqoridagi foydalanuvchidan video")
-        elif message.document:
-            await context.bot.send_document(ADMIN_ID, message.document.file_id, caption="📎 Yuqoridagi foydalanuvchidan fayl")
-        elif message.voice:
-            await context.bot.send_voice(ADMIN_ID, message.voice.file_id, caption="🎤 Yuqoridagi foydalanuvchidan ovozli xabar")
+        # Xabarni copy — rasm+matn bitta, bold/italic/link formatlash saqlanadi
+        await message.copy(chat_id=ADMIN_ID)
 
         await message.reply_text("✅ Xabaringiz yuborildi! Tez orada javob olasiz.")
     except Exception as e:
