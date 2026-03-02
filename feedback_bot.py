@@ -66,6 +66,7 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             parse_mode="HTML",
             reply_markup=keyboard
         )
+        await message.forward(chat_id=ADMIN_ID)
         if message.photo:
             await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption="📸 Yuqoridagi foydalanuvchidan rasm")
         elif message.video:
