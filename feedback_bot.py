@@ -51,7 +51,8 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"👤 <b>Ism:</b> {full_name}\n"
         f"🆔 <b>Telegram ID:</b> <code>{user_id}</code>\n"
         f"🔗 <b>Username:</b> {username}\n"
-        f"🌐 <b>Link:</b> <a href='{tg_link}'>{full_name}</a>"
+        f"🌐 <b>Link:</b> <a href='{tg_link}'>{full_name}</a>\n\n"
+        f"💬 <b>Xabar:</b>\n{message.text or '[Media xabar]'}"
     )
 
     keyboard = InlineKeyboardMarkup([
@@ -65,8 +66,14 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             parse_mode="HTML",
             reply_markup=keyboard
         )
-        # Xabarni forward qilish — formatlash (bold, italic, link) saqlanadi
-        await message.forward(chat_id=ADMIN_ID)
+        if message.photo:
+            await context.bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption="📸 Yuqoridagi foydalanuvchidan rasm")
+        elif message.video:
+            await context.bot.send_video(ADMIN_ID, message.video.file_id, caption="🎥 Yuqoridagi foydalanuvchidan video")
+        elif message.document:
+            await context.bot.send_document(ADMIN_ID, message.document.file_id, caption="📎 Yuqoridagi foydalanuvchidan fayl")
+        elif message.voice:
+            await context.bot.send_voice(ADMIN_ID, message.voice.file_id, caption="🎤 Yuqoridagi foydalanuvchidan ovozli xabar")
 
         await message.reply_text("✅ Xabaringiz yuborildi! Tez orada javob olasiz.")
     except Exception as e:
@@ -106,7 +113,6 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
     target_id = WAITING_REPLY.pop(ADMIN_ID)
 
     try:
-        # Oddiy copy — hech qanday qo'shimcha matn yo'q, formatlash saqlanadi
         await message.copy(chat_id=target_id)
         await message.reply_text(f"✅ Javob foydalanuvchiga ({target_id}) yuborildi!")
     except Exception as e:
@@ -137,7 +143,10 @@ def main():
         handle_user_message
     ))
     logger.info("Bot ishga tushdi...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True
+    )
 
 
 if __name__ == "__main__":
