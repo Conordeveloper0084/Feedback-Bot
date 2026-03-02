@@ -50,8 +50,7 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"📩 <b>Yangi xabar!</b>\n\n"
         f"👤 <b>Ism:</b> {full_name}\n"
         f"🆔 <b>Telegram ID:</b> <code>{user_id}</code>\n"
-        f"🔗 <b>Username:</b> {username}\n"
-        f"🌐 <b>Link:</b> <a href='{tg_link}'>{full_name}</a>\n\n"
+        f"🔗 <b>Username:</b> {username}\n\n"
         f"💬 <b>Xabar:</b>\n{message.text or '[Media xabar]'}"
     )
 
